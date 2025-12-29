@@ -20,7 +20,7 @@ void PluginProcessor::parameterValueChanged(int parameterIndex, float newValue)
     AudioToUIMessage msg;
     msg.what = AudioToUIMessage::NEW_VALUE;
     msg.which = (PluginProcessor::Parameters)parameterIndex;
-    //msg.newValue = params[parameterIndex]->convertFrom0to1(newValue);
+    msg.newValue = params[parameterIndex]->convertFrom0to1(newValue);
     audioToUI.push(msg);
 }
 void PluginProcessor::parameterGestureChanged(int parameterIndex, bool starting) {}
@@ -109,22 +109,53 @@ void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-    juce::ignoreUnused (destData);
+    std::unique_ptr<juce::XmlElement> xml(new juce::XmlElement("darkmeter"));
+    xml->setAttribute("streamingVersion", (int)8524);
+    if (pluginWidth < 8 || pluginWidth > 16386) pluginWidth = 1000;
+    xml->setAttribute(juce::String("awdm_width"), pluginWidth);
+    if (pluginHeight < 8 || pluginHeight > 16386) pluginHeight = 300;
+    xml->setAttribute(juce::String("awdm_height"), pluginHeight);
+    copyXmlToBinary(*xml, destData);
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    juce::ignoreUnused (data, sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+    if (xmlState.get() != nullptr)
+    {
+        if (xmlState->hasTagName("darkmeter"))
+        {
+            auto w = xmlState->getIntAttribute(juce::String("awdm_width"));
+            if (w < 8 || w > 16386) w = 1000;
+            auto h = xmlState->getIntAttribute(juce::String("awdm_height"));
+            if (h < 8 || h > 16386) h = 300;
+            updatePluginSize(w, h);
+        }
+        updateHostDisplay();
+    }
+    //These functions are adapted (simplified) from baconpaul's airwin2rack and all thanks to getting
+    //it working shall go there, though sudara or anyone could've spotted that I hadn't done these.
+    //baconpaul pointed me to the working versions in airwin2rack, that I needed to see.
 }
 
 void PluginProcessor::updateTrackProperties(const TrackProperties& properties)
 {
     trackProperties = properties;
-    // call the verison in the editor to update there
+    // call the version in the editor to update there
     if (auto* editor = dynamic_cast<PluginEditor*> (getActiveEditor()))
         editor->updateTrackProperties();
+}
+
+void PluginProcessor::updatePluginSize(int w, int h)
+{
+    pluginWidth = w;
+    pluginHeight = h;
+    // call the version in the editor to update there
+    if (auto* editor = dynamic_cast<PluginEditor*> (getActiveEditor()))
+        editor->updatePluginSize();
 }
 
 //==============================================================================
@@ -157,11 +188,11 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     
     UIToAudioMessage uim;
     while (uiToAudio.pop(uim)) {
-        //switch (uim.what) {
-        //case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
-        //case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
-        //case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
-        //}
+        switch (uim.what) {
+        case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
+        case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
+        case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
+        }
     } //Handle inbound messages from the UI thread
     
     double rmsSize = (1881.0 / 44100.0)*getSampleRate(); //higher is slower with larger RMS buffers
@@ -269,11 +300,11 @@ void PluginProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::Mid
     
     UIToAudioMessage uim;
     while (uiToAudio.pop(uim)) {
-        //switch (uim.what) {
-        //case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
-        //case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
-        //case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
-        //}
+        switch (uim.what) {
+        case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
+        case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
+        case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
+        }
     } //Handle inbound messages from the UI thread
     
     double rmsSize = (1881.0 / 44100.0)*getSampleRate(); //higher is slower with larger RMS buffers

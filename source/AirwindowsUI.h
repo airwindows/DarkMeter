@@ -120,6 +120,8 @@ struct AirwindowsMeter : public juce::Component
     void paint(juce::Graphics &g) override;
     
     static constexpr int dataPoints = 5151;
+    juce::String displayTrackName = juce::String();
+    juce::String displayFont = juce::String();
     int displayWidth = 1280;
     int displayHeight = 200;
     unsigned long dataPosition = 0;

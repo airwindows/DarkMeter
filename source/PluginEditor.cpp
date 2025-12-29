@@ -14,12 +14,14 @@ PluginEditor::PluginEditor (PluginProcessor& p)
         airwindowsLookAndFeel.setColour(juce::Slider::thumbColourId, airwindowsLookAndFeel.defaultColour);
     }
     updateTrackProperties();
+    updatePluginSize();
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000/30); //space between UI screen updates. Larger is slower updates to screen
 
     meter.setOpaque(true);
     meter.resetArrays();
+    meter.displayTrackName = hostTrackName;
     addAndMakeVisible(meter);
     
     addAndMakeVisible (resetButton);
@@ -30,14 +32,6 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
    	setSize (airwindowsLookAndFeel.userWidth, airwindowsLookAndFeel.userHeight);
     // Make sure that before the constructor has finished, you've set the editor's size to whatever you need it to be.
-    if (airwindowsLookAndFeel.usingNamedImage) {
-        //getConstrainer()->setFixedAspectRatio(1000.0f/537.0f); //the aspect ratio stuff leads to cropping the content area off the top
-        setResizeLimits(32, 32, 2000, 2000); //this will not honor resize limits correctly in all the DAWs
-    }
-
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    //the aspect ratio stuff leads to cropping the content area off the top
 }
 
 PluginEditor::~PluginEditor(){
@@ -76,7 +70,7 @@ void PluginEditor::paint (juce::Graphics& g)
     if (airwindowsLookAndFeel.newFont == juce::String()) airwindowsLookAndFeel.newFont = "Jost";
     g.setFont(juce::FontOptions(airwindowsLookAndFeel.newFont, g.getCurrentFont().getHeight(), 0));
     auto linewidth = getLocalBounds().getWidth(); if (getLocalBounds().getHeight() > linewidth) linewidth = getLocalBounds().getHeight();  linewidth = (int)cbrt(linewidth/2)/2;
-    if ((hostTrackName == juce::String()) || (hostTrackName.length() < 1.0f)) hostTrackName = juce::String("ColorMeter"); //if not track name, then name of plugin
+    if ((hostTrackName == juce::String()) || (hostTrackName.length() < 1.0f)) hostTrackName = juce::String("DarkMeter"); //if not track name, then name of plugin
     float radius = getLocalBounds().getWidth(); if (radius > (getLocalBounds().getHeight())*0.0618f) radius = (getLocalBounds().getHeight())*0.0618f;
     auto embossScale = sqrt(sqrt(radius*0.618f)*1.618f)*0.618f; //this is customized to the needs of the plugin title text area
     g.setFont ((radius*12.0f) / (float)g.getCurrentFont().getHeight());
@@ -100,6 +94,8 @@ void PluginEditor::paint (juce::Graphics& g)
 void PluginEditor::resized()
 {
     auto area = getLocalBounds();
+    processorRef.pluginWidth = airwindowsLookAndFeel.userWidth = area.getWidth();
+    processorRef.pluginHeight = airwindowsLookAndFeel.userHeight = area.getHeight();
     auto linewidth = area.getWidth();
     if (area.getHeight() > linewidth) linewidth = area.getHeight();
     linewidth = (int)cbrt(linewidth/2)/2;
@@ -123,6 +119,14 @@ void PluginEditor::updateTrackProperties() {
     if (optB.has_value()) hostTrackName = *optB;
     repaint();
     
+}
+
+void PluginEditor::updatePluginSize() {
+    airwindowsLookAndFeel.userWidth = processorRef.pluginWidth;
+    airwindowsLookAndFeel.userHeight = processorRef.pluginHeight;
+    if (airwindowsLookAndFeel.userWidth < 8 || airwindowsLookAndFeel.userWidth > 16386) airwindowsLookAndFeel.userWidth = 1000;
+    if (airwindowsLookAndFeel.userHeight < 8 || airwindowsLookAndFeel.userHeight > 16386) airwindowsLookAndFeel.userHeight = 300;
+    repaint();
 }
 
 void PluginEditor::idle()
