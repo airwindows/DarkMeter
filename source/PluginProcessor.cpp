@@ -20,7 +20,7 @@ void PluginProcessor::parameterValueChanged(int parameterIndex, float newValue)
     AudioToUIMessage msg;
     msg.what = AudioToUIMessage::NEW_VALUE;
     msg.which = (PluginProcessor::Parameters)parameterIndex;
-    msg.newValue = params[parameterIndex]->convertFrom0to1(newValue);
+    //msg.newValue = params[parameterIndex]->convertFrom0to1(newValue);
     audioToUI.push(msg);
 }
 void PluginProcessor::parameterGestureChanged(int parameterIndex, bool starting) {}
@@ -188,11 +188,11 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     
     UIToAudioMessage uim;
     while (uiToAudio.pop(uim)) {
-        switch (uim.what) {
-        case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
-        case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
-        case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
-        }
+        //switch (uim.what) {
+        //case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
+        //case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
+        //case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
+        //}
     } //Handle inbound messages from the UI thread
     
     double rmsSize = (1881.0 / 44100.0)*getSampleRate(); //higher is slower with larger RMS buffers
@@ -300,11 +300,11 @@ void PluginProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::Mid
     
     UIToAudioMessage uim;
     while (uiToAudio.pop(uim)) {
-        switch (uim.what) {
-        case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
-        case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
-        case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
-        }
+        //switch (uim.what) {
+        //case UIToAudioMessage::NEW_VALUE: params[uim.which]->setValueNotifyingHost(params[uim.which]->convertTo0to1(uim.newValue)); break;
+        //case UIToAudioMessage::BEGIN_EDIT: params[uim.which]->beginChangeGesture(); break;
+        //case UIToAudioMessage::END_EDIT: params[uim.which]->endChangeGesture(); break;
+        //}
     } //Handle inbound messages from the UI thread
     
     double rmsSize = (1881.0 / 44100.0)*getSampleRate(); //higher is slower with larger RMS buffers
