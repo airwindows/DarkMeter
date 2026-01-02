@@ -25,7 +25,7 @@ public:
         {
             IdleTimer(PluginEditor *ed) : ed(ed) {}
             ~IdleTimer() = default;
-            void timerCallback() override { ed->idle(); }
+            void timerCallback() override { if (ed) ed->idle(); }
             PluginEditor *ed;
         };
 
